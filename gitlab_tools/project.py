@@ -25,15 +25,15 @@ def project():
     pass
 
 
-@project.command()
-@click.argument('term', nargs=1, type=str)
-@print_returned_json
-def search_command(term):
-    return search(term)
-
-
-@project.command()
+@project.command("get")
 @click.argument('project_id', nargs=1, type=str)
 @print_returned_json
 def get_command(project_id):
     return get(project_id)
+
+
+@project.command("search")
+@click.argument('term', nargs=1, type=str)
+@print_returned_json
+def search_command(term):
+    return search(term)

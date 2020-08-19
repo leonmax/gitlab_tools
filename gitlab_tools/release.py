@@ -1,6 +1,6 @@
 import click
 
-from .constant import gitlab_config, session
+from .constant import gitlab_config, session, print_returned_json
 
 
 def get(project_id):
@@ -27,6 +27,7 @@ def release():
 
 @release.command("get")
 @click.option('-p', '--project-id', default=47, type=int)
+@print_returned_json
 def get_command(project_id):
     return get(project_id)
 

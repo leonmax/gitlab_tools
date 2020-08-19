@@ -30,7 +30,7 @@ def merge_request():
     pass
 
 
-@merge_request.command()
+@merge_request.command("get")
 @click.option('-p', '--project-id', default=47, type=int)
 @click.option('--page', default=1, type=int)
 @click.option('--state', default="merged", type=str)
@@ -40,7 +40,7 @@ def get_command(project_id, page, state, created_after):
     return get(project_id, page, state, created_after)
 
 
-@merge_request.command()
+@merge_request.command("get_approval")
 @click.option('-p', '--project-id', default=44, type=int)
 @click.option('--merge-request-iid', default=225, type=int)
 @print_returned_json

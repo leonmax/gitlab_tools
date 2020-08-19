@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gitlab-tools"
-version = "0.1.2"
+version = "0.1.5"
 description = ""
 authors = ["Yangming Huang <yangming@inceptioglobal.ai>"]
 packages = [
