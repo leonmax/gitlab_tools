@@ -1,10 +1,10 @@
 [tool.poetry]
 name = "gitlab-tools"
-version = "0.1.0"
+version = "0.1.2"
 description = ""
 authors = ["Yangming Huang <yangming@inceptioglobal.ai>"]
 packages = [
-    { include = "cli" },
+    { include = "gitlab_tools" },
 ]
 
 [tool.poetry.dependencies]
@@ -14,7 +14,7 @@ click = "^7.0"
 pykebab = "^0.2.6"
 
 [tool.poetry.scripts]
-lab = 'cli.cli:main'
+lab = 'gitlab_tools.cli:main'
 
 [build-system]
 requires = ["poetry>=1.0.0"]
