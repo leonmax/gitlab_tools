@@ -1,23 +1,26 @@
 import click
 
-from .constant import gitlab_config, session, print_returned_json
+from gitlab_tools.util import print_returned_json, Api
 
 
-def search(term):
-    r = session.get(f"{gitlab_config.api_url}/projects?search={term}")
-    projects = [
-        {
-            'id': p['id'],
-            'name_with_namespace': p['name_with_namespace']
-        }
-        for p in r.json()
-    ]
-    return projects
+class Project(Api):
+    def search(self, term):
+        r = self.session.get(f"{self.config.api_url}/projects?search={term}")
+        projects = [
+            {
+                'id': p['id'],
+                'name_with_namespace': p['name_with_namespace']
+            }
+            for p in r.json()
+        ]
+        return projects
+
+    def get(self, project_id):
+        r = self.session.get(f"{self.config.api_url}/projects/{project_id}")
+        return r.json()
 
 
-def get(project_id):
-    r = session.get(f"{gitlab_config.api_url}/projects/{project_id}")
-    return r.json()
+pass_api = click.make_pass_decorator(Project, ensure=True)
 
 
 @click.group()
@@ -25,15 +28,17 @@ def project():
     pass
 
 
-@project.command("get")
+@project.command()
 @click.argument('project_id', nargs=1, type=str)
+@pass_api
 @print_returned_json
-def get_command(project_id):
-    return get(project_id)
+def get(api, project_id):
+    return api.get(project_id)
 
 
-@project.command("search")
+@project.command()
 @click.argument('term', nargs=1, type=str)
+@pass_api
 @print_returned_json
-def search_command(term):
-    return search(term)
+def search(api, term):
+    return api.search(term)

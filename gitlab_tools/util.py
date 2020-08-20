@@ -1,45 +1,44 @@
-import re
+import abc
+import json
+import os
 import sys
 
-import click
-
-from .constant import gitlab_config, session, print_returned_json
-from gitlab_tools import merge_request
+import requests
+from kebab import kebab_config, Field, load_source
 
 
-@click.command()
-def remove_offline_runners():
-    while True:
-        r = session.get(f"{gitlab_config.api_url}/runners/all?status=offline")
-
-        if len(r.json()) == 0:
-            break
-        for runner in r.json():
-            print(f"deleting {runner['id']}: {runner['description']}")
-            r = session.delete(f"{gitlab_config.api_url}/runners/{runner['id']}")
+@kebab_config
+class GitlabConfig:
+    api_url = Field("api_url")
+    api_token = Field("api_token")
 
 
-@click.command()
-@click.option('-p', '--project-id', default=47, type=int)
-@click.option('--page', default=1, type=int)
-@print_returned_json
-def find_incompliant_title(project_id, page=1):
-    results = []
-    totals = 0
+def load_config() -> GitlabConfig:
+    default_config_path = os.path.expanduser("~/.config/gitlab/tools.yaml")
+    if not os.path.exists(default_config_path):
+        dir = os.path.dirname(default_config_path)
+        os.makedirs(dir, exist_ok=True)
+        print(f"Please config {default_config_path}", file=sys.stderr)
+        sys.exit(1)
 
-    while True:
-        resp_json = merge_request.get(project_id=project_id, page=page)
-        if not resp_json:
-            break
-        for mr in resp_json:
-            if not re.match(r"Revert .*", mr['title']) and not re.match(r"\[\w+-\d+\].*", mr['title']):
-                results += [{
-                    k: mr[k]
-                    for k in ["id", "iid", "title"]
-                }]
-        print(f"querying: page {page}", file=sys.stderr)
-        page += 1
-        totals += len(resp_json)
+    k = load_source(default_urls=default_config_path)
+    return k.cast(".", GitlabConfig)
 
-    print(f"rate: {len(results)}/{totals}", file=sys.stderr)
-    return results
+
+def print_returned_json(fn):
+    def wrapper(*args, **kwargs):
+        result = fn(*args, **kwargs)
+        print(json.dumps(result))
+        return result
+    wrapper.__name__ = fn.__name__
+    return wrapper
+
+
+class Api(abc.ABC):
+    def __init__(self):
+        self.config = load_config()
+        self.session = requests.Session()
+        self.session.headers.update({
+            "Authorization": f"Bearer {self.config.api_token}",
+            "Content-Type": "application/json"
+        })

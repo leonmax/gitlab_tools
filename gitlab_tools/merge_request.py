@@ -3,26 +3,29 @@ from datetime import date, timedelta
 
 import click
 
-from .constant import gitlab_config, session, print_returned_json
+from gitlab_tools.util import print_returned_json, Api
 
 
-def get(project_id, page=1, state="merged", created_after=None):
-    params = {
-        "per_page": 100,
-        "page": page,
-        "state": state,
-        "created_after": created_after or (date.today() - timedelta(days=30)).isoformat()
-    }
-    response = session.get(f"{gitlab_config.api_url}/projects/{project_id}/merge_requests", params=params)
+class MergeRequest(Api):
+    def get(self, project_id, page=1, state="merged", created_after=None):
+        params = {
+            "per_page": 100,
+            "page": page,
+            "state": state,
+            "created_after": created_after or (date.today() - timedelta(days=30)).isoformat()
+        }
+        response = self.session.get(f"{self.config.api_url}/projects/{project_id}/merge_requests", params=params)
 
-    return response.json()
+        return response.json()
+
+    def get_approval(self, project_id, merge_request_iid):
+        response = self.session.get(
+            f"{self.config.api_url}/projects/{project_id}/merge_requests/{merge_request_iid}/approvals")
+
+        return response.json()
 
 
-def get_approval(project_id, merge_request_iid):
-    response = session.get(
-        f"{gitlab_config.api_url}/projects/{project_id}/merge_requests/{merge_request_iid}/approvals")
-
-    return response.json()
+pass_api = click.make_pass_decorator(MergeRequest, ensure=True)
 
 
 @click.group()
@@ -30,22 +33,24 @@ def merge_request():
     pass
 
 
-@merge_request.command("get")
-@click.option('-p', '--project-id', default=47, type=int)
+@merge_request.command()
+@click.option('-p', '--project-id', type=int)
 @click.option('--page', default=1, type=int)
 @click.option('--state', default="merged", type=str)
 @click.option('--created-after', type=str)
+@pass_api
 @print_returned_json
-def get_command(project_id, page, state, created_after):
-    return get(project_id, page, state, created_after)
+def get(api, project_id, page, state, created_after):
+    return api.get(project_id, page, state, created_after)
 
 
-@merge_request.command("get_approval")
-@click.option('-p', '--project-id', default=44, type=int)
-@click.option('--merge-request-iid', default=225, type=int)
+@merge_request.command()
+@click.option('-p', '--project-id', type=int)
+@click.option('--merge-request-iid', type=int)
+@pass_api
 @print_returned_json
-def get_approval_command(project_id, merge_request_iid):
-    return get_approval(project_id, merge_request_iid)
+def get_approval(api, project_id, merge_request_iid):
+    return api.get_approval(project_id, merge_request_iid)
 
 
 if __name__ == "__main__":
